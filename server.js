@@ -42,34 +42,49 @@ app.get('/check/:robloxId', (req, res) => {
     });
 });
 
-// NOWE ENDPOINTY DO SYNCHRONIZACJI RÓL
+// ENDPOINTY DO SYNCHRONIZACJI RÓL
 
 app.get('/pending-role/:robloxId', (req, res) => {
     const { robloxId } = req.params;
     const roleName = db.getPendingRole(robloxId);
-    
-    res.json({ 
-        hasRole: !!roleName,
-        roleName: roleName 
-    });
+    res.json({ hasRole: !!roleName, roleName: roleName });
 });
 
 app.post('/clear-pending-role/:robloxId', (req, res) => {
-    const { robloxId } = req.params;
-    db.clearPendingRole(robloxId);
+    db.clearPendingRole(req.params.robloxId);
     res.json({ success: true });
 });
 
-app.post('/sync-role', async (req, res) => {
-    const { robloxId, robloxUsername, teamName, action, oldTeam } = req.body;
-    
-    console.log(`[SYNC] ${action}: ${robloxUsername} - ${teamName || oldTeam || 'brak'}`);
-    
+// SPRAWDŹ JAKIE ROLE MA UŻYTKOWNIK NA DISCORDZIE
+app.get('/user-discord-roles', async (req, res) => {
+    const { robloxId } = req.query;
     const user = db.getByRoblox(robloxId);
-    if (!user) {
-        return res.status(404).json({ error: 'Niezweryfikowany użytkownik' });
-    }
     
+    if (!user) return res.json({ team: null });
+    
+    try {
+        const guild = await client.guilds.fetch(config.discord.guildId);
+        const member = await guild.members.fetch(user.discord_id);
+        
+        const roleSync = config.roleSync || {};
+        
+        for (const [discordRoleId, robloxTeamName] of Object.entries(roleSync)) {
+            if (member.roles.cache.has(discordRoleId)) {
+                console.log(`[ROLE CHECK] ${user.discord_id} ma rolę ${robloxTeamName}`);
+                return res.json({ team: robloxTeamName });
+            }
+        }
+        
+        res.json({ team: null });
+    } catch (err) {
+        console.error('[ROLE CHECK ERROR]', err);
+        res.json({ team: null });
+    }
+});
+
+app.post('/sync-role', async (req, res) => {
+    const { robloxId, robloxUsername, teamName, action } = req.body;
+    console.log(`[SYNC] ${action}: ${robloxUsername} - ${teamName || 'brak'}`);
     res.json({ success: true });
 });
 
