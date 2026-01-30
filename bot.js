@@ -2,6 +2,11 @@ const { Client, GatewayIntentBits, Events, EmbedBuilder, ActionRowBuilder, Strin
 const config = require('./config');
 const db = require('./database');
 
+// DEBUG - sprawdzamy czy zmienne są widoczne
+console.log('[DEBUG] Token:', process.env.DISCORD_TOKEN ? 'JEST (długość: ' + process.env.DISCORD_TOKEN.length + ')' : 'BRAK');
+console.log('[DEBUG] Guild ID:', process.env.DISCORD_GUILD_ID);
+console.log('[DEBUG] Client ID:', process.env.DISCORD_CLIENT_ID);
+
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -246,7 +251,7 @@ client.on(Events.MessageCreate, async message => {
 });
 
 client.once(Events.ClientReady, async () => {
-    console.log(`[DISCORD] Bot gotowy jako ${client.user.tag}`);
+    console.log(`[DISCORD] Bot ELPN gotowy jako ${client.user.tag}`);
     console.log('[INFO] Użyj !setup-tickets na kanale, gdzie ma być panel');
 });
 
