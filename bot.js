@@ -1,11 +1,6 @@
-const { Client, GatewayIntentBits, Events, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, PermissionsBitField } = require('discord.js');
+const { Client, GatewayIntentBits, Events, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, PermissionsBitField, ActivityType } = require('discord.js');
 const config = require('./config');
 const db = require('./database');
-
-// DEBUG - sprawdzamy czy zmienne są widoczne
-console.log('[DEBUG] Token:', process.env.DISCORD_TOKEN ? 'JEST (długość: ' + process.env.DISCORD_TOKEN.length + ')' : 'BRAK');
-console.log('[DEBUG] Guild ID:', process.env.DISCORD_GUILD_ID);
-console.log('[DEBUG] Client ID:', process.env.DISCORD_CLIENT_ID);
 
 const client = new Client({
     intents: [
@@ -18,6 +13,7 @@ const client = new Client({
 
 const codes = new Map();
 
+// Helper do embedów
 const createEmbed = (title, description, color = 0x0099FF) => {
     return new EmbedBuilder()
         .setTitle(title)
@@ -26,10 +22,12 @@ const createEmbed = (title, description, color = 0x0099FF) => {
         .setTimestamp();
 };
 
+// Funkcja tworząca panel ticketów
 async function createTicketPanel() {
     const channel = await client.channels.fetch(config.discord.channels.ticketPanel);
     if (!channel) return console.error('Nie znaleziono kanału ticketów!');
     
+    // Usuń stare wiadomości
     const messages = await channel.messages.fetch({ limit: 10 });
     await channel.bulkDelete(messages).catch(() => {});
     
@@ -55,6 +53,7 @@ async function createTicketPanel() {
     console.log('✅ Panel ticketów utworzony!');
 }
 
+// Obsługa tworzenia ticketu
 client.on(Events.InteractionCreate, async interaction => {
     if (!interaction.isStringSelectMenu()) return;
     if (interaction.customId !== 'create_ticket') return;
@@ -62,6 +61,7 @@ client.on(Events.InteractionCreate, async interaction => {
     const ticketType = interaction.values[0];
     const typeConfig = config.ticketTypes.find(t => t.value === ticketType);
     
+    // Sprawdź czy użytkownik ma już otwarty ticket
     const existing = db.prepare('SELECT * FROM tickets WHERE user_id = ? AND status = "open"').get(interaction.user.id);
     if (existing) {
         return interaction.reply({ 
@@ -76,9 +76,10 @@ client.on(Events.InteractionCreate, async interaction => {
         const guild = interaction.guild;
         const category = await guild.channels.fetch(config.discord.channels.ticketCategory);
         
+        // Utwórz kanał
         const channel = await guild.channels.create({
             name: `ticket-${interaction.user.username}`,
-            type: 0,
+            type: 0, // Text
             parent: category.id,
             permissionOverwrites: [
                 {
@@ -114,6 +115,7 @@ client.on(Events.InteractionCreate, async interaction => {
         await channel.send({ content: `${interaction.user} <@&${config.discord.roles.admin}>`, embeds: [ticketEmbed], components: [closeBtn] });
         await interaction.editReply({ content: `✅ Ticket utworzony: ${channel}` });
         
+        // Log
         const logChannel = await client.channels.fetch(config.discord.channels.ticketLog);
         if (logChannel) {
             const logEmbed = createEmbed('🎫 Nowy Ticket', `Użytkownik: ${interaction.user.tag}\nTyp: ${typeConfig.label}\nKanał: ${channel}`, 0x00FF00);
@@ -126,6 +128,7 @@ client.on(Events.InteractionCreate, async interaction => {
     }
 });
 
+// Zamknięcie ticketu
 client.on(Events.InteractionCreate, async interaction => {
     if (!interaction.isButton()) return;
     if (interaction.customId !== 'close_ticket') return;
@@ -143,6 +146,7 @@ client.on(Events.InteractionCreate, async interaction => {
     }, 5000);
 });
 
+// Obsługa komend slash
 client.on(Events.InteractionCreate, async interaction => {
     if (!interaction.isChatInputCommand()) return;
     
@@ -192,6 +196,7 @@ client.on(Events.InteractionCreate, async interaction => {
     }
 });
 
+// Webhook banów
 async function sendBanWebhook(robloxName, robloxId, reason, adminName) {
     if (!config.discord.channels.banWebhook) return;
     
@@ -215,6 +220,7 @@ async function sendBanWebhook(robloxName, robloxId, reason, adminName) {
     }
 }
 
+// Komendy tekstowe
 client.on(Events.MessageCreate, async message => {
     if (message.author.bot) return;
     if (!message.content.startsWith('!')) return;
@@ -250,13 +256,19 @@ client.on(Events.MessageCreate, async message => {
     }
 });
 
+// ============================================
+// STATUS BOTA - TU JEST ZMIANA!
+// ============================================
 client.once(Events.ClientReady, async () => {
+    // Ustaw status: Nie przeszkadzać (czerwona ikona) + tekst ELPN [BETA]
+    client.user.setPresence({
+        activities: [{ name: 'ELPN [BETA]', type: ActivityType.Playing }],
+        status: 'dnd' // 'dnd' = Do Not Disturb (czerwona ikona)
+    });
+    
     console.log(`[DISCORD] Bot ELPN gotowy jako ${client.user.tag}`);
     console.log('[INFO] Użyj !setup-tickets na kanale, gdzie ma być panel');
+    console.log('[STATUS] Ustawiono: Nie przeszkadzać + ELPN [BETA]');
 });
 
 module.exports = { client, codes, sendBanWebhook, db };
-client.login(config.discord.token).catch(err => {
-    console.error('[ERROR] Błąd logowania do Discord:', err.message);
-    process.exit(1);
-});
