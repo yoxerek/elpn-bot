@@ -17,8 +17,7 @@ module.exports = {
             banWebhook: process.env.BAN_WEBHOOK_URL
         },
         roles: {
-            admin: process.env.ADMIN_ROLE_ID,
-            mod: process.env.MOD_ROLE_ID
+            admin: process.env.ADMIN_ROLE_ID
         }
     },
     server: {
@@ -38,5 +37,12 @@ module.exports = {
         { label: 'ORGANIZACJA WYDARZEŃ', value: 'event', emoji: '🎉', description: 'Zgłoszenie do organizacji' },
         { label: 'BAN ID 600', value: 'ban600', emoji: '⛔', description: 'Otrzymałeś bana ID 600?' },
         { label: 'ROZŁĄCZENIE KONTA', value: 'unlink', emoji: '🔌', description: 'Rozłączenie Roblox z Discord' }
-    ]
+    ],
+    // DODAJ TO - Mapowanie ról Discord na Roblox:
+    roleSync: {
+        // 'ID_ROLI_NA_DISCORDZIE': 'Nazwa Teamu w Roblox',
+        '987654321098765432': 'Legia Warszawa',
+        '123456789012345678': 'Lech Poznań',
+        // Dodaj więcej...
+    }
 };
