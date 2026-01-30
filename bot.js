@@ -165,7 +165,9 @@ client.on(Events.InteractionCreate, async interaction => {
             console.log(`[SYNC] Ustawiono oczekującą rolę ${rola} dla Roblox ID: ${linked.roblox_id}`);
         }
         
-        const embed = createEmbed('✅ Nadano rolę', `Użytkownik: ${user}\nRola: **${rola}**\n\n${linked and "Synchronizacja z Roblox w toku..." or "Użytkownik niezweryfikowany w Roblox"}`, 0x00FF00);
+        // POPRAWIONA LINIA - Używamy ? : zamiast and/or
+        const syncText = linked ? "Synchronizacja z Roblox w toku..." : "Użytkownik niezweryfikowany w Roblox";
+        const embed = createEmbed('✅ Nadano rolę', `Użytkownik: ${user}\nRola: **${rola}**\n\n${syncText}`, 0x00FF00);
         await interaction.reply({ embeds: [embed] });
     }
     
