@@ -256,3 +256,7 @@ client.once(Events.ClientReady, async () => {
 });
 
 module.exports = { client, codes, sendBanWebhook, db };
+client.login(config.discord.token).catch(err => {
+    console.error('[ERROR] Błąd logowania do Discord:', err.message);
+    process.exit(1);
+});
