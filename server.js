@@ -41,7 +41,51 @@ app.get('/check/:robloxId', (req, res) => {
         discordId: user ? user.discord_id : null 
     });
 });
+// Dodaj na końcu pliku server.js, przed app.listen
 
+// Synchronizacja ról Roblox <-> Discord
+app.post('/sync-role', async (req, res) => {
+    const { robloxId, robloxUsername, teamName, action, oldTeam } = req.body;
+    
+    console.log(`[SYNC] ${action}: ${robloxUsername} - ${teamName || oldTeam || 'brak'}`);
+    
+    // Znajdź powiązane konto Discord
+    const user = db.getByRoblox(robloxId);
+    if (!user) {
+        return res.status(404).json({ error: 'Niezweryfikowany użytkownik' });
+    }
+    
+    try {
+        if (action === 'add_role' && teamName) {
+            // Nadaj rolę na Discordzie
+            // Wymaga implementacji giveDiscordRole w bot.js
+            // await giveDiscordRole(user.discord_id, teamName);
+            console.log(`[DISCORD] Nadano rolę ${teamName} dla ${robloxUsername}`);
+        } else if (action === 'remove_role') {
+            // Zabierz rolę na Discordzie
+            console.log(`[DISCORD] Zabrano rolę dla ${robloxUsername}`);
+        }
+        
+        res.json({ success: true });
+    } catch (err) {
+        console.error('[SYNC ERROR]', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Pobierz aktualne role z Discorda (do synchronizacji przy wejściu do gry)
+app.get('/get-discord-role', (req, res) => {
+    const { robloxId } = req.query;
+    const user = db.getByRoblox(robloxId);
+    
+    if (!user) {
+        return res.json({ role: null });
+    }
+    
+    // TODO: Sprawdź jaką rolę ma użytkownik na Discordzie i zwróć jej nazwę
+    // Na razie zwracamy null (brak synchronizacji Discord -> Roblox)
+    res.json({ role: null });
+});
 app.listen(config.server.port, () => {
     console.log(`[SERVER] Serwer gotowy na porcie ${config.server.port}`);
 });
