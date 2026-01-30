@@ -6,6 +6,7 @@ const { codes, sendBanWebhook, db } = require('./bot');
 const app = express();
 app.use(bodyParser.json());
 
+// Stare endpointy (muszą zostać!)
 app.post('/verify', (req, res) => {
     const { robloxId, robloxUsername, verificationCode } = req.body;
     
@@ -41,7 +42,8 @@ app.get('/check/:robloxId', (req, res) => {
         discordId: user ? user.discord_id : null 
     });
 });
-// Dodaj na końcu pliku server.js, przed app.listen
+
+// NOWE ENDPOINTY - DODAJ TE PONIŻEJ:
 
 // Synchronizacja ról Roblox <-> Discord
 app.post('/sync-role', async (req, res) => {
@@ -56,14 +58,15 @@ app.post('/sync-role', async (req, res) => {
     }
     
     try {
+        // Import funkcji z bot.js (musisz ją dodać w module.exports w bot.js!)
+        // const { giveDiscordRole, removeDiscordRole } = require('./bot');
+        
         if (action === 'add_role' && teamName) {
-            // Nadaj rolę na Discordzie
-            // Wymaga implementacji giveDiscordRole w bot.js
+            console.log(`[DISCORD] Nadano rolę ${teamName} dla ${robloxUsername} (Discord: ${user.discord_id})`);
             // await giveDiscordRole(user.discord_id, teamName);
-            console.log(`[DISCORD] Nadano rolę ${teamName} dla ${robloxUsername}`);
         } else if (action === 'remove_role') {
-            // Zabierz rolę na Discordzie
             console.log(`[DISCORD] Zabrano rolę dla ${robloxUsername}`);
+            // await removeDiscordRole(user.discord_id, oldTeam);
         }
         
         res.json({ success: true });
@@ -73,7 +76,7 @@ app.post('/sync-role', async (req, res) => {
     }
 });
 
-// Pobierz aktualne role z Discorda (do synchronizacji przy wejściu do gry)
+// Pobierz aktualne role z Discorda
 app.get('/get-discord-role', (req, res) => {
     const { robloxId } = req.query;
     const user = db.getByRoblox(robloxId);
@@ -82,10 +85,16 @@ app.get('/get-discord-role', (req, res) => {
         return res.json({ role: null });
     }
     
-    // TODO: Sprawdź jaką rolę ma użytkownik na Discordzie i zwróć jej nazwę
-    // Na razie zwracamy null (brak synchronizacji Discord -> Roblox)
+    // TODO: Sprawdź jaką rolę ma użytkownik na Discordzie
     res.json({ role: null });
 });
+
+// Strona główna (opcjonalnie)
+app.get('/', (req, res) => {
+    res.send('✅ ELPN Bot działa!');
+});
+
+// Uruchomienie serwera (MUSI BYĆ NA KOŃCU!)
 app.listen(config.server.port, () => {
-    console.log(`[SERVER] Serwer gotowy na porcie ${config.server.port}`);
+    console.log(`[SERVER] Serwer ELPN gotowy na porcie ${config.server.port}`);
 });
