@@ -29,6 +29,12 @@ db.exec(`
         banned_by TEXT,
         banned_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
+    
+    CREATE TABLE IF NOT EXISTS pending_roles (
+        roblox_id TEXT PRIMARY KEY,
+        role_name TEXT,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
 `);
 
 module.exports = {
@@ -62,5 +68,19 @@ module.exports = {
     addBan: (robloxId, robloxName, reason, bannedBy) => {
         const stmt = db.prepare('INSERT INTO bans (roblox_id, roblox_name, reason, banned_by) VALUES (?, ?, ?, ?)');
         return stmt.run(robloxId, robloxName, reason, bannedBy);
+    },
+    
+    setPendingRole: (robloxId, roleName) => {
+        const stmt = db.prepare('INSERT OR REPLACE INTO pending_roles (roblox_id, role_name) VALUES (?, ?)');
+        return stmt.run(robloxId, roleName);
+    },
+
+    getPendingRole: (robloxId) => {
+        const row = db.prepare('SELECT role_name FROM pending_roles WHERE roblox_id = ?').get(robloxId);
+        return row ? row.role_name : null;
+    },
+
+    clearPendingRole: (robloxId) => {
+        return db.prepare('DELETE FROM pending_roles WHERE roblox_id = ?').run(robloxId);
     }
 };
