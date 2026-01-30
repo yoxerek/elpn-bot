@@ -6,7 +6,6 @@ const { codes, sendBanWebhook, db } = require('./bot');
 const app = express();
 app.use(bodyParser.json());
 
-// Stare endpointy (muszą zostać!)
 app.post('/verify', (req, res) => {
     const { robloxId, robloxUsername, verificationCode } = req.body;
     
@@ -43,58 +42,41 @@ app.get('/check/:robloxId', (req, res) => {
     });
 });
 
-// NOWE ENDPOINTY - DODAJ TE PONIŻEJ:
+// NOWE ENDPOINTY DO SYNCHRONIZACJI RÓL
 
-// Synchronizacja ról Roblox <-> Discord
+app.get('/pending-role/:robloxId', (req, res) => {
+    const { robloxId } = req.params;
+    const roleName = db.getPendingRole(robloxId);
+    
+    res.json({ 
+        hasRole: !!roleName,
+        roleName: roleName 
+    });
+});
+
+app.post('/clear-pending-role/:robloxId', (req, res) => {
+    const { robloxId } = req.params;
+    db.clearPendingRole(robloxId);
+    res.json({ success: true });
+});
+
 app.post('/sync-role', async (req, res) => {
     const { robloxId, robloxUsername, teamName, action, oldTeam } = req.body;
     
     console.log(`[SYNC] ${action}: ${robloxUsername} - ${teamName || oldTeam || 'brak'}`);
     
-    // Znajdź powiązane konto Discord
     const user = db.getByRoblox(robloxId);
     if (!user) {
         return res.status(404).json({ error: 'Niezweryfikowany użytkownik' });
     }
     
-    try {
-        // Import funkcji z bot.js (musisz ją dodać w module.exports w bot.js!)
-        // const { giveDiscordRole, removeDiscordRole } = require('./bot');
-        
-        if (action === 'add_role' && teamName) {
-            console.log(`[DISCORD] Nadano rolę ${teamName} dla ${robloxUsername} (Discord: ${user.discord_id})`);
-            // await giveDiscordRole(user.discord_id, teamName);
-        } else if (action === 'remove_role') {
-            console.log(`[DISCORD] Zabrano rolę dla ${robloxUsername}`);
-            // await removeDiscordRole(user.discord_id, oldTeam);
-        }
-        
-        res.json({ success: true });
-    } catch (err) {
-        console.error('[SYNC ERROR]', err);
-        res.status(500).json({ error: err.message });
-    }
+    res.json({ success: true });
 });
 
-// Pobierz aktualne role z Discorda
-app.get('/get-discord-role', (req, res) => {
-    const { robloxId } = req.query;
-    const user = db.getByRoblox(robloxId);
-    
-    if (!user) {
-        return res.json({ role: null });
-    }
-    
-    // TODO: Sprawdź jaką rolę ma użytkownik na Discordzie
-    res.json({ role: null });
-});
-
-// Strona główna (opcjonalnie)
 app.get('/', (req, res) => {
     res.send('✅ ELPN Bot działa!');
 });
 
-// Uruchomienie serwera (MUSI BYĆ NA KOŃCU!)
 app.listen(config.server.port, () => {
     console.log(`[SERVER] Serwer ELPN gotowy na porcie ${config.server.port}`);
 });
