@@ -1,3 +1,4 @@
+// config.js - CAŁY PLIK
 require('dotenv').config();
 
 module.exports = {
@@ -5,11 +6,30 @@ module.exports = {
         token: process.env.DISCORD_TOKEN,
         guildId: process.env.DISCORD_GUILD_ID,
         clientId: process.env.DISCORD_CLIENT_ID,
+        
+        // Mapowanie dla komendy /nadajrole (ID roli Discord -> nazwa w Roblox)
         roleMapping: {
-            'ID_ROLI_INTER': 'InterFan',
-            'ID_ROLI_MILAN': 'MilanFan',
-            'ID_ROLI_JUVE': 'JuveFan'
+            'ID_ROLI_ARKA_GDYNIA': 'Arka Gdynia',
+            'ID_ROLI_BRUK_BET': 'Bruk-BET Termalica',
+            'ID_ROLI_CRACOVIA': 'Cracovia',
+            'ID_ROLI_GKS_KATOWICE': 'GKS Katowice',
+            'ID_ROLI_GORNIK_ZABRZE': 'Górnik Zabrze',
+            'ID_ROLI_JAGIELLONIA': 'Jagiellonia Białystok',
+            'ID_ROLI_KORONA_KIELCE': 'Korona Kielce',
+            'ID_ROLI_LECH_POZNAN': 'Lech Poznań',
+            'ID_ROLI_LECHIA_GDANSK': 'Lechia Gdańsk',
+            'ID_ROLI_LEGIA_WARSZAWA': 'Legia Warszawa',
+            'ID_ROLI_MOTOR_LUBLIN': 'Motor Lublin',
+            'ID_ROLI_PIAST_GLIWICE': 'Piast Gliwice',
+            'ID_ROLI_POGON_SZCZECIN': 'Pogoń Szczecin',
+            'ID_ROLI_RADOMIAK_RADOM': 'Radomiak Radom',
+            'ID_ROLI_RAKOW_CZESTOCHOWA': 'Raków Częstochowa',
+            'ID_ROLI_TURYSTA': 'Turysta',
+            'ID_ROLI_WIDZEW_LODZ': 'Widzew Łódź',
+            'ID_ROLI_WISLA_PLOCK': 'Wisła Płock',
+            'ID_ROLI_ZAGLEBIE_LUBLIN': 'Zagłębie Lublin'
         },
+        
         channels: {
             ticketCategory: process.env.TICKET_CATEGORY_ID,
             ticketLog: process.env.TICKET_LOG_CHANNEL_ID,
@@ -20,9 +40,34 @@ module.exports = {
             admin: process.env.ADMIN_ROLE_ID
         }
     },
+    
+    // Synchronizacja automatyczna (gdy ktoś ma rolę na DC, dostaje w Roblox)
+    roleSync: {
+        'ID_ROLI_ARKA_GDYNIA': 'Arka Gdynia',
+        'ID_ROLI_BRUK_BET': 'Bruk-BET Termalica',
+        'ID_ROLI_CRACOVIA': 'Cracovia',
+        'ID_ROLI_GKS_KATOWICE': 'GKS Katowice',
+        'ID_ROLI_GORNIK_ZABRZE': 'Górnik Zabrze',
+        'ID_ROLI_JAGIELLONIA': 'Jagiellonia Białystok',
+        'ID_ROLI_KORONA_KIELCE': 'Korona Kielce',
+        'ID_ROLI_LECH_POZNAN': 'Lech Poznań',
+        'ID_ROLI_LECHIA_GDANSK': 'Lechia Gdańsk',
+        'ID_ROLI_LEGIA_WARSZAWA': 'Legia Warszawa',
+        'ID_ROLI_MOTOR_LUBLIN': 'Motor Lublin',
+        'ID_ROLI_PIAST_GLIWICE': 'Piast Gliwice',
+        'ID_ROLI_POGON_SZCZECIN': 'Pogoń Szczecin',
+        'ID_ROLI_RADOMIAK_RADOM': 'Radomiak Radom',
+        'ID_ROLI_RAKOW_CZESTOCHOWA': 'Raków Częstochowa',
+        'ID_ROLI_TURYSTA': 'Turysta',
+        'ID_ROLI_WIDZEW_LODZ': 'Widzew Łódź',
+        'ID_ROLI_WISLA_PLOCK': 'Wisła Płock',
+        'ID_ROLI_ZAGLEBIE_LUBLIN': 'Zagłębie Lublin'
+    },
+    
     server: {
         port: process.env.PORT || 3000
     },
+    
     ticketTypes: [
         { label: 'UNBAN', value: 'unban', emoji: '🔓', description: 'Chcesz wykupić/odwołać swojego bana?' },
         { label: 'ZAKUPY', value: 'zakupy', emoji: '🛒', description: 'Zakupiłeś produkt ze sklepu ELPN?' },
@@ -37,12 +82,5 @@ module.exports = {
         { label: 'ORGANIZACJA WYDARZEŃ', value: 'event', emoji: '🎉', description: 'Zgłoszenie do organizacji' },
         { label: 'BAN ID 600', value: 'ban600', emoji: '⛔', description: 'Otrzymałeś bana ID 600?' },
         { label: 'ROZŁĄCZENIE KONTA', value: 'unlink', emoji: '🔌', description: 'Rozłączenie Roblox z Discord' }
-    ],
-    // DODAJ TO - Mapowanie ról Discord na Roblox:
-    roleSync: {
-        // 'ID_ROLI_NA_DISCORDZIE': 'Nazwa Teamu w Roblox',
-        '987654321098765432': 'Legia Warszawa',
-        '123456789012345678': 'Lech Poznań',
-        // Dodaj więcej...
-    }
+    ]
 };
