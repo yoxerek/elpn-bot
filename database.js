@@ -1,3 +1,4 @@
+// database.js - CAŁY PLIK
 const Database = require('better-sqlite3');
 const path = require('path');
 
@@ -30,6 +31,7 @@ db.exec(`
         banned_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
     
+    -- NOWA TABELA DO SYNCHRONIZACJI RÓL
     CREATE TABLE IF NOT EXISTS pending_roles (
         roblox_id TEXT PRIMARY KEY,
         role_name TEXT,
@@ -70,6 +72,7 @@ module.exports = {
         return stmt.run(robloxId, robloxName, reason, bannedBy);
     },
     
+    // FUNKCJE DO SYNCHRONIZACJI RÓL
     setPendingRole: (robloxId, roleName) => {
         const stmt = db.prepare('INSERT OR REPLACE INTO pending_roles (roblox_id, role_name) VALUES (?, ?)');
         return stmt.run(robloxId, roleName);
