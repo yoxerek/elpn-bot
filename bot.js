@@ -1,3 +1,4 @@
+// bot.js - CAŁY PLIK
 const { Client, GatewayIntentBits, Events, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, PermissionsBitField, ActivityType } = require('discord.js');
 const config = require('./config');
 const db = require('./database');
@@ -30,7 +31,7 @@ async function createTicketPanel() {
     
     const embed = new EmbedBuilder()
         .setTitle('🎫 System Ticketów ELPN')
-        .setDescription('**Witaj na Administracji | ELPN!**\n\nAby stworzyć ticket zaznacz jedną z opcji poniżej.\nPamiętaj aby wybrać poprawną opcję i nie pingować administracji, zajmą się twoją sprawą jak najszybciej!')
+        .setDescription('**Witaj na Administracji | ELPN!**\n\nAby stworzyć ticket zaznacz jedną z opcji poniżej.')
         .setColor(0xFF0000)
         .setFooter({ text: 'Administracja ELPN' });
     
@@ -95,7 +96,7 @@ client.on(Events.InteractionCreate, async interaction => {
         
         const ticketEmbed = new EmbedBuilder()
             .setTitle(`${typeConfig.emoji} Ticket: ${typeConfig.label}`)
-            .setDescription(`Użytkownik: ${interaction.user}\nTyp: **${typeConfig.label}**\n\n${typeConfig.description}\n\nOpisz szczegółowo swoją sprawę poniżej. Administracja odpisze najszybciej jak to możliwe.`)
+            .setDescription(`Użytkownik: ${interaction.user}\nTyp: **${typeConfig.label}**\n\nOpisz szczegółowo swoją sprawę.`)
             .setColor(0x00FF00);
         
         const closeBtn = new ActionRowBuilder().addComponents(
@@ -111,13 +112,13 @@ client.on(Events.InteractionCreate, async interaction => {
         
         const logChannel = await client.channels.fetch(config.discord.channels.ticketLog);
         if (logChannel) {
-            const logEmbed = createEmbed('🎫 Nowy Ticket', `Użytkownik: ${interaction.user.tag}\nTyp: ${typeConfig.label}\nKanał: ${channel}`, 0x00FF00);
+            const logEmbed = createEmbed('🎫 Nowy Ticket', `Użytkownik: ${interaction.user.tag}\nTyp: ${typeConfig.label}`, 0x00FF00);
             logChannel.send({ embeds: [logEmbed] });
         }
         
     } catch (err) {
         console.error(err);
-        await interaction.editReply({ content: '❌ Wystąpił błąd podczas tworzenia ticketu!' });
+        await interaction.editReply({ content: '❌ Błąd!' });
     }
 });
 
@@ -128,9 +129,9 @@ client.on(Events.InteractionCreate, async interaction => {
     const channel = interaction.channel;
     const ticketData = db.getTicket(channel.id);
     
-    if (!ticketData) return interaction.reply({ content: '❌ To nie jest kanał ticketu!', ephemeral: true });
+    if (!ticketData) return interaction.reply({ content: '❌ To nie jest ticket!', ephemeral: true });
     
-    await interaction.reply({ content: '🔒 Zamykam ticket za 5 sekund...' });
+    await interaction.reply({ content: '🔒 Zamykam za 5 sekund...' });
     
     setTimeout(async () => {
         db.closeTicket(channel.id);
@@ -158,15 +159,14 @@ client.on(Events.InteractionCreate, async interaction => {
         
         await member.roles.add(entry[0]);
         
-        // ZAPISZ DO BAZY ŻEBY ROBLOX DOSTAŁ ROLĘ
+        // 🔥 SYNCHRONIZACJA Z ROBLOX - ZAPISZ DO BAZY
         const linked = db.getByDiscord(user.id);
         if (linked) {
             db.setPendingRole(linked.roblox_id, rola);
-            console.log(`[SYNC] Ustawiono oczekującą rolę ${rola} dla Roblox ID: ${linked.roblox_id}`);
+            console.log(`[SYNC] Ustawiono rolę ${rola} dla Roblox ID: ${linked.roblox_id}`);
         }
         
-        // POPRAWIONA LINIA - Używamy ? : zamiast and/or
-        const syncText = linked ? "Synchronizacja z Roblox w toku..." : "Użytkownik niezweryfikowany w Roblox";
+        const syncText = linked ? "Synchronizacja z Roblox..." : "Niezweryfikowany w Roblox";
         const embed = createEmbed('✅ Nadano rolę', `Użytkownik: ${user}\nRola: **${rola}**\n\n${syncText}`, 0x00FF00);
         await interaction.reply({ embeds: [embed] });
     }
@@ -195,8 +195,8 @@ async function sendBanWebhook(robloxName, robloxId, reason, adminName) {
     if (!config.discord.channels.banWebhook) return;
     
     const embed = new EmbedBuilder()
-        .setTitle('⛔ Nowy Ban na Serwerze')
-        .setDescription(`**Gracz:** ${robloxName} (ID: ${robloxId})\n**Powód:** ${reason}\n**Admin:** ${adminName}`)
+        .setTitle('⛔ Nowy Ban')
+        .setDescription(`**Gracz:** ${robloxName}\n**Powód:** ${reason}\n**Admin:** ${adminName}`)
         .setColor(0xFF0000)
         .setTimestamp();
     
@@ -223,7 +223,7 @@ client.on(Events.MessageCreate, async message => {
     
     if (command === 'weryfikuj') {
         const robloxName = args[0];
-        if (!robloxName) return message.reply('Użycie: `!weryfikuj [nazwa_w_roblox]`');
+        if (!robloxName) return message.reply('Użycie: `!weryfikuj [nick]`');
         
         const code = Math.random().toString(36).substring(2, 8).toUpperCase();
         codes.set(code, {
@@ -233,10 +233,9 @@ client.on(Events.MessageCreate, async message => {
         });
         
         const embed = new EmbedBuilder()
-            .setTitle('🔐 Weryfikacja Roblox')
-            .setDescription(`Twój kod: **\`${code}\`**\n\nWejdź do gry i wpisz w czacie:\n\`/verify ${code}\``)
-            .setColor(0x00FF00)
-            .setFooter({ text: 'Kod ważny 10 minut' });
+            .setTitle('🔐 Weryfikacja')
+            .setDescription(`Kod: **\`${code}\`**\nWpisz w grze: \`/verify ${code}\``)
+            .setColor(0x00FF00);
             
         message.reply({ embeds: [embed] });
         setTimeout(() => codes.delete(code), 600000);
@@ -245,7 +244,7 @@ client.on(Events.MessageCreate, async message => {
     if (command === 'setup-tickets') {
         if (!message.member.roles.cache.has(config.discord.roles.admin)) return;
         await createTicketPanel();
-        message.reply('✅ Panel ticketów utworzony!');
+        message.reply('✅ Panel utworzony!');
     }
 });
 
@@ -255,8 +254,7 @@ client.once(Events.ClientReady, async () => {
         status: 'dnd'
     });
     
-    console.log(`[DISCORD] Bot ELPN gotowy jako ${client.user.tag}`);
-    console.log('[STATUS] Ustawiono: Nie przeszkadzać + ELPN [BETA]');
+    console.log(`[DISCORD] Bot gotowy jako ${client.user.tag}`);
 });
 
 module.exports = { client, codes, sendBanWebhook, db };
