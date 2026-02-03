@@ -1,9 +1,8 @@
-// bot.js - CAŁY PLIK z uprawnieniami po UserID
+// bot.js v8.0 - z nowym systemem weryfikacji
 const { Client, GatewayIntentBits, Events, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, PermissionsBitField, ActivityType } = require('discord.js');
 const config = require('./config');
 const db = require('./database');
 
-// OBSŁUGA BŁĘDÓW
 process.on('unhandledRejection', error => {
     console.error('Unhandled promise rejection:', error);
 });
@@ -20,13 +19,26 @@ const client = new Client({
     ]
 });
 
+// LISTA ADMINÓW (Discord ID)
+const ALLOWED_USERS = [
+    '1110877053022117888',  // TWOJE ID DISCORD
+    '1424731659139416147'   // ID KOLEGI DISCORD
+];
+
+// MAPA KODÓW: kod -> { robloxId, robloxUsername, discordId?, timestamp }
 const codes = new Map();
 
-// LISTA OSÓB Z UPRAWNIENIAMI (TY I KOLEG)
-const ALLOWED_USERS = [
-    '1110877053022117888',  // TWOJE ID
-    '1424731659139416147'   // ID KOLEGI
-];
+// Funkcja eksportowana dla server.js
+function generateCode(robloxId, robloxUsername) {
+    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+    codes.set(code, {
+        robloxId: robloxId,
+        robloxUsername: robloxUsername,
+        timestamp: Date.now()
+    });
+    setTimeout(() => codes.delete(code), 600000);
+    return code;
+}
 
 const createEmbed = (title, description, color = 0x0099FF) => {
     return new EmbedBuilder()
@@ -46,13 +58,13 @@ async function createTicketPanel() {
         
         const embed = new EmbedBuilder()
             .setTitle('🎫 System Ticketów ELPN')
-            .setDescription('**Witaj na Administracji | ELPN!**\n\nAby stworzyć ticket zaznacz jedną z opcji poniżej.')
+            .setDescription('**Witaj na Administracji | ELPN!**')
             .setColor(0xFF0000)
             .setFooter({ text: 'Administracja ELPN' });
         
         const selectMenu = new StringSelectMenuBuilder()
             .setCustomId('create_ticket')
-            .setPlaceholder('Wybierz kategorię ticketu...')
+            .setPlaceholder('Wybierz kategorię...')
             .addOptions(config.ticketTypes.map(t => ({
                 label: t.label,
                 value: t.value,
@@ -61,7 +73,6 @@ async function createTicketPanel() {
             })));
         
         const row = new ActionRowBuilder().addComponents(selectMenu);
-        
         await channel.send({ embeds: [embed], components: [row] });
         console.log('✅ Panel ticketów utworzony!');
     } catch (err) {
@@ -79,10 +90,7 @@ client.on(Events.InteractionCreate, async interaction => {
         
         const existing = db.prepare('SELECT * FROM tickets WHERE user_id = ? AND status = "open"').get(interaction.user.id);
         if (existing) {
-            return interaction.reply({ 
-                content: `❌ Masz już otwarty ticket: <#${existing.channel_id}>`, 
-                ephemeral: true 
-            });
+            return interaction.reply({ content: `❌ Masz już otwarty ticket`, ephemeral: true });
         }
         
         await interaction.deferReply({ ephemeral: true });
@@ -95,18 +103,9 @@ client.on(Events.InteractionCreate, async interaction => {
             type: 0,
             parent: category.id,
             permissionOverwrites: [
-                {
-                    id: guild.id,
-                    deny: [PermissionsBitField.Flags.ViewChannel]
-                },
-                {
-                    id: interaction.user.id,
-                    allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory]
-                },
-                {
-                    id: config.discord.roles.admin,
-                    allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory]
-                }
+                { id: guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
+                { id: interaction.user.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory] },
+                { id: config.discord.roles.admin, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory] }
             ]
         });
         
@@ -114,15 +113,11 @@ client.on(Events.InteractionCreate, async interaction => {
         
         const ticketEmbed = new EmbedBuilder()
             .setTitle(`${typeConfig.emoji} Ticket: ${typeConfig.label}`)
-            .setDescription(`Użytkownik: ${interaction.user}\nTyp: **${typeConfig.label}**\n\nOpisz szczegółowo swoją sprawę.`)
+            .setDescription(`Użytkownik: ${interaction.user}`)
             .setColor(0x00FF00);
         
         const closeBtn = new ActionRowBuilder().addComponents(
-            new ButtonBuilder()
-                .setCustomId('close_ticket')
-                .setLabel('Zamknij ticket')
-                .setStyle(ButtonStyle.Danger)
-                .setEmoji('🔒')
+            new ButtonBuilder().setCustomId('close_ticket').setLabel('Zamknij').setStyle(ButtonStyle.Danger).setEmoji('🔒')
         );
         
         await channel.send({ content: `${interaction.user} <@&${config.discord.roles.admin}>`, embeds: [ticketEmbed], components: [closeBtn] });
@@ -130,15 +125,10 @@ client.on(Events.InteractionCreate, async interaction => {
         
         const logChannel = await client.channels.fetch(config.discord.channels.ticketLog);
         if (logChannel) {
-            const logEmbed = createEmbed('🎫 Nowy Ticket', `Użytkownik: ${interaction.user.tag}\nTyp: ${typeConfig.label}`, 0x00FF00);
-            logChannel.send({ embeds: [logEmbed] });
+            logChannel.send({ embeds: [createEmbed('🎫 Nowy Ticket', `Użytkownik: ${interaction.user.tag}\nTyp: ${typeConfig.label}`, 0x00FF00)] });
         }
-        
     } catch (err) {
-        console.error('Błąd interakcji:', err);
-        if (interaction.deferred) {
-            await interaction.editReply({ content: '❌ Wystąpił błąd!' }).catch(() => {});
-        }
+        console.error(err);
     }
 });
 
@@ -149,17 +139,15 @@ client.on(Events.InteractionCreate, async interaction => {
         
         const channel = interaction.channel;
         const ticketData = db.getTicket(channel.id);
+        if (!ticketData) return interaction.reply({ content: '❌ To nie jest ticket!', ephemeral: true });
         
-        if (!ticketData) return interaction.reply({ content: '❌ To nie jest kanał ticketu!', ephemeral: true });
-        
-        await interaction.reply({ content: '🔒 Zamykam ticket za 5 sekund...' });
-        
+        await interaction.reply({ content: '🔒 Zamykam za 5 sekund...' });
         setTimeout(async () => {
             db.closeTicket(channel.id);
             await channel.delete().catch(() => {});
         }, 5000);
     } catch (err) {
-        console.error('Błąd zamknięcia ticketu:', err);
+        console.error(err);
     }
 });
 
@@ -169,13 +157,11 @@ client.on(Events.InteractionCreate, async interaction => {
         
         const { commandName } = interaction;
         
-        // SPRAWDZANIE UPRAWNIEŃ DLA /NADAJROLE I /USUNROLE
         if (commandName === 'nadajrole' || commandName === 'usunrole') {
             const hasRole = interaction.member.roles.cache.has(config.discord.roles.admin);
             const isWhitelisted = ALLOWED_USERS.includes(interaction.user.id);
-            
             if (!hasRole && !isWhitelisted) {
-                return interaction.reply({ content: '❌ Brak uprawnień! Tylko administratorzy mogą używać tej komendy.', ephemeral: true });
+                return interaction.reply({ content: '❌ Brak uprawnień!', ephemeral: true });
             }
         }
         
@@ -183,22 +169,23 @@ client.on(Events.InteractionCreate, async interaction => {
             const user = interaction.options.getUser('uzytkownik');
             const rola = interaction.options.getString('rola');
             
+            // 🔴 BLOKADA: Sprawdź czy ma połączone konto
+            const linked = db.getByDiscord(user.id);
+            if (!linked) {
+                return interaction.reply({ 
+                    content: `❌ **Brak weryfikacji!**\n\nUżytkownik ${user.tag} nie ma połączonego konta Roblox.\n\n📝 **Jak połączyć:**\n1. Wpisz w grze Roblox: \`!weryfikacja\`\n2. Otrzymasz kod w czacie\n3. Wpisz na Discordzie: \`!weryfikacja [kod]\``, 
+                    ephemeral: true 
+                });
+            }
+            
             const member = await interaction.guild.members.fetch(user.id);
             const entry = Object.entries(config.discord.roleMapping).find(([id, name]) => name === rola);
-            
             if (!entry) return interaction.reply({ content: '❌ Nieznana rola!', ephemeral: true });
             
             await member.roles.add(entry[0]);
+            db.setPendingRole(linked.roblox_id, rola);
             
-            // SYNCHRONIZACJA Z ROBLOX
-            const linked = db.getByDiscord(user.id);
-            if (linked) {
-                db.setPendingRole(linked.roblox_id, rola);
-                console.log(`[SYNC] Ustawiono rolę ${rola} dla Roblox ID: ${linked.roblox_id}`);
-            }
-            
-            const syncText = linked ? "Synchronizacja z Roblox..." : "Użytkownik niezweryfikowany w Roblox";
-            const embed = createEmbed('✅ Nadano rolę', `Użytkownik: ${user}\nRola: **${rola}**\n\n${syncText}`, 0x00FF00);
+            const embed = createEmbed('✅ Nadano rolę', `Użytkownik: ${user}\nRola: **${rola}**\n\n✅ Konta połączone - sync z Roblox aktywny!`, 0x00FF00);
             await interaction.reply({ embeds: [embed] });
         }
         
@@ -208,42 +195,18 @@ client.on(Events.InteractionCreate, async interaction => {
             
             const member = await interaction.guild.members.fetch(user.id);
             const entry = Object.entries(config.discord.roleMapping).find(([id, name]) => name === rola);
-            
             if (!entry) return interaction.reply({ content: '❌ Nieznana rola!', ephemeral: true });
             
             await member.roles.remove(entry[0]);
-            
             const embed = createEmbed('🗑️ Usunięto rolę', `Użytkownik: ${user}\nRola: **${rola}**`, 0xFF0000);
             await interaction.reply({ embeds: [embed] });
         }
     } catch (err) {
-        console.error('Błąd komendy:', err);
+        console.error(err);
     }
 });
 
-async function sendBanWebhook(robloxName, robloxId, reason, adminName) {
-    if (!config.discord.channels.banWebhook) return;
-    
-    const embed = new EmbedBuilder()
-        .setTitle('⛔ Nowy Ban na Serwerze')
-        .setDescription(`**Gracz:** ${robloxName} (ID: ${robloxId})\n**Powód:** ${reason}\n**Admin:** ${adminName}`)
-        .setColor(0xFF0000)
-        .setTimestamp();
-    
-    try {
-        await fetch(config.discord.channels.banWebhook, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                username: 'System Banów ELPN',
-                embeds: [embed]
-            })
-        });
-    } catch (err) {
-        console.error('Błąd webhooka:', err);
-    }
-}
-
+// 🔴 NOWA KOMENDA TEKSTOWA: !weryfikacja [kod] (KROK 2)
 client.on(Events.MessageCreate, async message => {
     try {
         if (message.author.bot) return;
@@ -252,62 +215,70 @@ client.on(Events.MessageCreate, async message => {
         const args = message.content.slice(1).trim().split(/ +/);
         const command = args.shift().toLowerCase();
         
-        if (command === 'weryfikuj') {
-            const robloxName = args[0];
-            if (!robloxName) return message.reply('Użycie: `!weryfikuj [nazwa_w_roblox]`');
+        if (command === 'weryfikacja' || command === 'verify') {
+            const code = args[0];
             
-            const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-            codes.set(code, {
-                discordId: message.author.id,
-                robloxName: robloxName,
-                time: Date.now()
-            });
+            if (!code) {
+                return message.reply('❌ Użycie: `!weryfikacja [kod_z_gry]`\n\nWpierw wpisz `!weryfikacja` w grze Roblox.');
+            }
+            
+            const data = codes.get(code.toUpperCase());
+            if (!data) {
+                return message.reply('❌ Nieprawidłowy lub wygasły kod (ważny 10 minut).');
+            }
+            
+            // Sprawdź czy Discord konto już nie jest połączone
+            if (db.getByDiscord(message.author.id)) {
+                return message.reply('❌ Twoje konto Discord jest już połączone z Robloxem!');
+            }
+            
+            // LINKUJEMY!
+            db.link(message.author.id, data.robloxId, data.robloxUsername);
+            codes.delete(code.toUpperCase());
             
             const embed = new EmbedBuilder()
-                .setTitle('🔐 Weryfikacja Roblox')
-                .setDescription(`Twój kod: **\`${code}\`**\n\nWejdź do gry i wpisz w czacie:\n\`/verify ${code}\``)
+                .setTitle('✅ Weryfikacja udana!')
+                .setDescription(`**Połączono konta:**\n• **Discord:** ${message.author.tag}\n• **Roblox:** ${data.robloxUsername}\n\n🎉 Teraz możesz otrzymać rolę klubową!`)
                 .setColor(0x00FF00)
-                .setFooter({ text: 'Kod ważny 10 minut' });
+                .setTimestamp();
                 
             message.reply({ embeds: [embed] });
-            setTimeout(() => codes.delete(code), 600000);
         }
         
         if (command === 'setup-tickets') {
-            // Sprawdź czy na liście dozwolonych lub ma rolę admina
             const hasRole = message.member.roles.cache.has(config.discord.roles.admin);
             const isWhitelisted = ALLOWED_USERS.includes(message.author.id);
-            
             if (!hasRole && !isWhitelisted) return;
-            
             await createTicketPanel();
-            message.reply('✅ Panel ticketów utworzony!');
+            message.reply('✅ Panel utworzony!');
         }
     } catch (err) {
-        console.error('Błąd wiadomości:', err);
+        console.error(err);
     }
 });
 
-client.on('error', error => {
-    console.error('Discord Client Error:', error);
-});
+async function sendBanWebhook(robloxName, robloxId, reason, adminName) {
+    if (!config.discord.channels.banWebhook) return;
+    const embed = new EmbedBuilder()
+        .setTitle('⛔ Nowy Ban')
+        .setDescription(`**Gracz:** ${robloxName}\n**Powód:** ${reason}\n**Admin:** ${adminName}`)
+        .setColor(0xFF0000);
+    try {
+        await fetch(config.discord.channels.banWebhook, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: 'System Banów ELPN', embeds: [embed] })
+        });
+    } catch (err) {}
+}
+
+client.on('error', error => console.error('Discord Error:', error));
 
 client.once(Events.ClientReady, async () => {
-    try {
-        client.user.setPresence({
-            activities: [{ name: 'ELPN [BETA]', type: ActivityType.Playing }],
-            status: 'dnd'
-        });
-        
-        console.log(`[DISCORD] Bot ELPN gotowy jako ${client.user.tag}`);
-        console.log(`[ADMIN] Uprawnienia dla: ${ALLOWED_USERS.join(', ')}`);
-    } catch (err) {
-        console.error('Błąd ustawiania statusu:', err);
-    }
+    client.user.setPresence({ activities: [{ name: 'ELPN [BETA]', type: ActivityType.Playing }], status: 'dnd' });
+    console.log(`[DISCORD] Bot gotowy jako ${client.user.tag}`);
 });
 
-client.login(config.discord.token).catch(err => {
-    console.error('❌ BŁĄD LOGOWANIA:', err.message);
-});
+client.login(config.discord.token).catch(err => console.error('Błąd logowania:', err));
 
-module.exports = { client, codes, sendBanWebhook, db };
+module.exports = { client, codes, generateCode, sendBanWebhook, db };
