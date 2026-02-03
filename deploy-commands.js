@@ -71,13 +71,23 @@ const rest = new REST({ version: '10' }).setToken(config.discord.token);
 
 (async () => {
     try {
-        console.log('Rejestruję komendy ELPN (18 drużyn)...');
+        console.log('Usuwam stare komendy...');
+        // USUŃ WSZYSTKIE STARE KOMENDY
+        await rest.put(
+            Routes.applicationGuildCommands(config.discord.clientId, config.discord.guildId),
+            { body: [] }
+        );
+        console.log('✅ Stare komendy usunięte.');
+        
+        console.log('Rejestruję nowe komendy (18 drużyn)...');
+        // DODAJ NOWE
         await rest.put(
             Routes.applicationGuildCommands(config.discord.clientId, config.discord.guildId),
             { body: commands }
         );
-        console.log('✅ Komendy zarejestrowane! Odśwież Discorda (Ctrl+R)');
+        console.log('✅ Nowe komendy zarejestrowane!');
+        console.log('Odśwież Discorda (Ctrl+R) aby zobaczyć zmiany.');
     } catch (error) {
-        console.error('Błąd rejestracji:', error);
+        console.error('Błąd:', error);
     }
 })();
