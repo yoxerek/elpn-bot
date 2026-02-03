@@ -1,4 +1,4 @@
-// config.js - CAŁY PLIK
+// config.js - GOTOWY PLIK Z ID RÓL
 require('dotenv').config();
 
 module.exports = {
@@ -9,25 +9,24 @@ module.exports = {
         
         // Mapowanie dla komendy /nadajrole (ID roli Discord -> nazwa w Roblox)
         roleMapping: {
-            'ID_ROLI_ARKA_GDYNIA': 'Arka Gdynia',
-            'ID_ROLI_BRUK_BET': 'Bruk-BET Termalica',
-            'ID_ROLI_CRACOVIA': 'Cracovia',
-            'ID_ROLI_GKS_KATOWICE': 'GKS Katowice',
-            'ID_ROLI_GORNIK_ZABRZE': 'Górnik Zabrze',
-            'ID_ROLI_JAGIELLONIA': 'Jagiellonia Białystok',
-            'ID_ROLI_KORONA_KIELCE': 'Korona Kielce',
-            'ID_ROLI_LECH_POZNAN': 'Lech Poznań',
-            'ID_ROLI_LECHIA_GDANSK': 'Lechia Gdańsk',
-            'ID_ROLI_LEGIA_WARSZAWA': 'Legia Warszawa',
-            'ID_ROLI_MOTOR_LUBLIN': 'Motor Lublin',
-            'ID_ROLI_PIAST_GLIWICE': 'Piast Gliwice',
-            'ID_ROLI_POGON_SZCZECIN': 'Pogoń Szczecin',
-            'ID_ROLI_RADOMIAK_RADOM': 'Radomiak Radom',
-            'ID_ROLI_RAKOW_CZESTOCHOWA': 'Raków Częstochowa',
-            'ID_ROLI_TURYSTA': 'Turysta',
-            'ID_ROLI_WIDZEW_LODZ': 'Widzew Łódź',
-            'ID_ROLI_WISLA_PLOCK': 'Wisła Płock',
-            'ID_ROLI_ZAGLEBIE_LUBLIN': 'Zagłębie Lublin'
+            '1466173053410213942': 'Arka Gdynia',
+            '1466173053397504099': 'Bruk-BET Termalica',
+            '1466173053422800896': 'Cracovia',
+            '1466173053410213938': 'GKS Katowice',
+            '1466173053422800900': 'Górnik Zabrze',
+            '1466173053422800899': 'Jagiellonia Białystok',
+            '1466173053410213945': 'Korona Kielce',
+            '1466173053410213946': 'Lech Poznań',
+            '1466173053410213941': 'Lechia Gdańsk',
+            '1466173053397504100': 'Legia Warszawa',
+            '1466173053410213943': 'Motor Lublin',
+            '1466173053410213940': 'Piast Gliwice',
+            '1466173053410213944': 'Pogoń Szczecin',
+            '1466173053410213947': 'Radomiak Radom',
+            '1466173053422800898': 'Raków Częstochowa',
+            '1466173053410213939': 'Widzew Łódź',
+            '1466173053422800901': 'Wisła Płock',
+            '1466173053422800897': 'Zagłębie Lublin'
         },
         
         channels: {
@@ -41,27 +40,27 @@ module.exports = {
         }
     },
     
-    // Synchronizacja automatyczna (gdy ktoś ma rolę na DC, dostaje w Roblox)
+    // Synchronizacja automatyczna Discord -> Roblox
+    // Turysta pominięta - jest domyślna w Roblox przy wejściu na serwer
     roleSync: {
-        'ID_ROLI_ARKA_GDYNIA': 'Arka Gdynia',
-        'ID_ROLI_BRUK_BET': 'Bruk-BET Termalica',
-        'ID_ROLI_CRACOVIA': 'Cracovia',
-        'ID_ROLI_GKS_KATOWICE': 'GKS Katowice',
-        'ID_ROLI_GORNIK_ZABRZE': 'Górnik Zabrze',
-        'ID_ROLI_JAGIELLONIA': 'Jagiellonia Białystok',
-        'ID_ROLI_KORONA_KIELCE': 'Korona Kielce',
-        'ID_ROLI_LECH_POZNAN': 'Lech Poznań',
-        'ID_ROLI_LECHIA_GDANSK': 'Lechia Gdańsk',
-        'ID_ROLI_LEGIA_WARSZAWA': 'Legia Warszawa',
-        'ID_ROLI_MOTOR_LUBLIN': 'Motor Lublin',
-        'ID_ROLI_PIAST_GLIWICE': 'Piast Gliwice',
-        'ID_ROLI_POGON_SZCZECIN': 'Pogoń Szczecin',
-        'ID_ROLI_RADOMIAK_RADOM': 'Radomiak Radom',
-        'ID_ROLI_RAKOW_CZESTOCHOWA': 'Raków Częstochowa',
-        'ID_ROLI_TURYSTA': 'Turysta',
-        'ID_ROLI_WIDZEW_LODZ': 'Widzew Łódź',
-        'ID_ROLI_WISLA_PLOCK': 'Wisła Płock',
-        'ID_ROLI_ZAGLEBIE_LUBLIN': 'Zagłębie Lublin'
+        '1466173053410213942': 'Arka Gdynia',
+        '1466173053397504099': 'Bruk-BET Termalica',
+        '1466173053422800896': 'Cracovia',
+        '1466173053410213938': 'GKS Katowice',
+        '1466173053422800900': 'Górnik Zabrze',
+        '1466173053422800899': 'Jagiellonia Białystok',
+        '1466173053410213945': 'Korona Kielce',
+        '1466173053410213946': 'Lech Poznań',
+        '1466173053410213941': 'Lechia Gdańsk',
+        '1466173053397504100': 'Legia Warszawa',
+        '1466173053410213943': 'Motor Lublin',
+        '1466173053410213940': 'Piast Gliwice',
+        '1466173053410213944': 'Pogoń Szczecin',
+        '1466173053410213947': 'Radomiak Radom',
+        '1466173053422800898': 'Raków Częstochowa',
+        '1466173053410213939': 'Widzew Łódź',
+        '1466173053422800901': 'Wisła Płock',
+        '1466173053422800897': 'Zagłębie Lublin'
     },
     
     server: {
