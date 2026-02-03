@@ -1,9 +1,9 @@
-// bot.js - NAPRAWIONY z obsługą błędów
+// bot.js - CAŁY PLIK z uprawnieniami po UserID
 const { Client, GatewayIntentBits, Events, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, PermissionsBitField, ActivityType } = require('discord.js');
 const config = require('./config');
 const db = require('./database');
 
-// OBSŁUGA BŁĘDÓW - niech bot nie crashuje
+// OBSŁUGA BŁĘDÓW
 process.on('unhandledRejection', error => {
     console.error('Unhandled promise rejection:', error);
 });
@@ -21,6 +21,12 @@ const client = new Client({
 });
 
 const codes = new Map();
+
+// LISTA OSÓB Z UPRAWNIENIAMI (TY I KOLEG)
+const ALLOWED_USERS = [
+    '1110877053022117888',  // TWOJE ID
+    '1424731659139416147'   // ID KOLEGI
+];
 
 const createEmbed = (title, description, color = 0x0099FF) => {
     return new EmbedBuilder()
@@ -163,11 +169,17 @@ client.on(Events.InteractionCreate, async interaction => {
         
         const { commandName } = interaction;
         
-        if (commandName === 'nadajrole') {
-            if (!interaction.member.roles.cache.has(config.discord.roles.admin)) {
-                return interaction.reply({ content: '❌ Brak uprawnień!', ephemeral: true });
-            }
+        // SPRAWDZANIE UPRAWNIEŃ DLA /NADAJROLE I /USUNROLE
+        if (commandName === 'nadajrole' || commandName === 'usunrole') {
+            const hasRole = interaction.member.roles.cache.has(config.discord.roles.admin);
+            const isWhitelisted = ALLOWED_USERS.includes(interaction.user.id);
             
+            if (!hasRole && !isWhitelisted) {
+                return interaction.reply({ content: '❌ Brak uprawnień! Tylko administratorzy mogą używać tej komendy.', ephemeral: true });
+            }
+        }
+        
+        if (commandName === 'nadajrole') {
             const user = interaction.options.getUser('uzytkownik');
             const rola = interaction.options.getString('rola');
             
@@ -178,23 +190,19 @@ client.on(Events.InteractionCreate, async interaction => {
             
             await member.roles.add(entry[0]);
             
-            // Synchronizacja z Roblox
+            // SYNCHRONIZACJA Z ROBLOX
             const linked = db.getByDiscord(user.id);
             if (linked) {
                 db.setPendingRole(linked.roblox_id, rola);
                 console.log(`[SYNC] Ustawiono rolę ${rola} dla Roblox ID: ${linked.roblox_id}`);
             }
             
-            const syncText = linked ? "Synchronizacja z Roblox..." : "Niezweryfikowany w Roblox";
+            const syncText = linked ? "Synchronizacja z Roblox..." : "Użytkownik niezweryfikowany w Roblox";
             const embed = createEmbed('✅ Nadano rolę', `Użytkownik: ${user}\nRola: **${rola}**\n\n${syncText}`, 0x00FF00);
             await interaction.reply({ embeds: [embed] });
         }
         
         if (commandName === 'usunrole') {
-            if (!interaction.member.roles.cache.has(config.discord.roles.admin)) {
-                return interaction.reply({ content: '❌ Brak uprawnień!', ephemeral: true });
-            }
-            
             const user = interaction.options.getUser('uzytkownik');
             const rola = interaction.options.getString('rola');
             
@@ -266,7 +274,12 @@ client.on(Events.MessageCreate, async message => {
         }
         
         if (command === 'setup-tickets') {
-            if (!message.member.roles.cache.has(config.discord.roles.admin)) return;
+            // Sprawdź czy na liście dozwolonych lub ma rolę admina
+            const hasRole = message.member.roles.cache.has(config.discord.roles.admin);
+            const isWhitelisted = ALLOWED_USERS.includes(message.author.id);
+            
+            if (!hasRole && !isWhitelisted) return;
+            
             await createTicketPanel();
             message.reply('✅ Panel ticketów utworzony!');
         }
@@ -275,16 +288,10 @@ client.on(Events.MessageCreate, async message => {
     }
 });
 
-// OBSŁUGA BŁĘDÓW DISCORD
 client.on('error', error => {
     console.error('Discord Client Error:', error);
 });
 
-client.on('shardError', error => {
-    console.error('Discord Shard Error:', error);
-});
-
-// START BOTA z obsługą błędów
 client.once(Events.ClientReady, async () => {
     try {
         client.user.setPresence({
@@ -293,16 +300,14 @@ client.once(Events.ClientReady, async () => {
         });
         
         console.log(`[DISCORD] Bot ELPN gotowy jako ${client.user.tag}`);
+        console.log(`[ADMIN] Uprawnienia dla: ${ALLOWED_USERS.join(', ')}`);
     } catch (err) {
         console.error('Błąd ustawiania statusu:', err);
     }
 });
 
-// Logowanie z obsługą błędu
 client.login(config.discord.token).catch(err => {
-    console.error('❌ BŁĄD LOGOWANIA DO DISCORD:', err.message);
-    console.log('Sprawdź czy token jest poprawny i czy intents są włączone w Developer Portal');
-    // Nie wychodzimy z procesu, żeby Railway nie restartował w kółko
+    console.error('❌ BŁĄD LOGOWANIA:', err.message);
 });
 
 module.exports = { client, codes, sendBanWebhook, db };
