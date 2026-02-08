@@ -155,7 +155,7 @@ client.on(Events.MessageCreate, async message => {
 });
 
 client.once(Events.ClientReady, () => {
-    client.user.setPresence({ activities: [{ name: 'ELPN v1.0 | ', type: ActivityType.Playing }], status: 'dnd' });
+    client.user.setPresence({ activities: [{ name: 'ELPN [BETA] | ', type: ActivityType.Playing }], status: 'dnd' });
     console.log(`[DISCORD] Bot gotowy!`);
 });
 
